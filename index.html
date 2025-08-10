@@ -1,17 +1,366 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <link rel="icon" href="favicon.ico" type="image/x-icon">
-
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Ivy Black — GWP Exchange</title>
   <meta name="description" content="Ivy Black is an exclusive, subscription-only marketplace for luxury GWP (Gifts With Purchase) items." />
   <style>
-  /* CSS CONTENT */
+    :root{
+      --bg:#0a0b0c;               /* near-black */
+      --bg-2:#0f1113;             /* panel black */
+      --steel-1:#8b8f94;          /* cold steel */
+      --steel-2:#a7adb4;          /* brushed* */
+      --accent:#14f195;           /* icy green accent */
+      --accent-dim:#0fbf72;
+      --muted:#c9cfd6;
+      --danger:#ff5c5c;
+      --ok:#49de80;
+      --shadow: 0 10px 30px rgba(0,0,0,.35);
+      --radius: 16px;
+      --radius-sm: 10px;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 1200px at 120% -10%, rgba(20,241,149,.06), transparent 60%) ,
+                  radial-gradient(900px 900px at -20% 110%, rgba(167,173,180,.12), transparent 60%),
+                  var(--bg);
+      color: #e6e8ea;
+      letter-spacing:.2px;
+    }
+    /* Subtle animated scanlines for a quiet "underground" feel */
+    body::after{
+      content:""; position:fixed; inset:0; pointer-events:none; mix-blend-mode:soft-light;
+      background: repeating-linear-gradient(0deg, rgba(255,255,255,.02) 0 1px, transparent 1px 3px);
+      opacity:.35; animation: flicker 12s linear infinite;
+    }
+    @keyframes flicker{ 0%,100%{opacity:.35} 50%{opacity:.25} }
+
+    /* Shared */
+    .container{max-width:1200px; margin:0 auto; padding: clamp(16px, 4vw, 32px);}    
+    .btn{
+      border:1px solid rgba(255,255,255,.12); background: linear-gradient(180deg, #1a1c1f, #121417);
+      color:#e6e8ea; padding:12px 16px; border-radius: var(--radius-sm); cursor:pointer; 
+      display:inline-flex; gap:10px; align-items:center; font-weight:600; letter-spacing:.3px; 
+      transition: transform .08s ease, border-color .2s ease, background .2s ease; user-select:none;
+    }
+    .btn:hover{ transform: translateY(-1px); border-color: rgba(255,255,255,.2); }
+    .btn:active{ transform: translateY(0); }
+    .btn.primary{ background: linear-gradient(180deg, #1f2a26, #0f1513); border-color: rgba(20,241,149,.35); color:var(--accent);}    
+    .badge{font-size:.78rem; padding:.2rem .5rem; border:1px solid rgba(255,255,255,.12); border-radius:999px; color:var(--steel-2);}
+
+    .muted{color:#b4bac0}
+    .divider{border:0; height:1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); margin:24px 0;}
+
+    /* Topbar */
+    .topbar{ position:sticky; top:0; z-index:50; backdrop-filter: blur(8px); background: rgba(8,10,12,.55); border-bottom:1px solid rgba(255,255,255,.06); }
+    .topbar .inner{ display:flex; align-items:center; justify-content:space-between; padding:12px 20px; }
+    .brand{ display:flex; gap:12px; align-items:center; text-decoration:none; color:#e6e8ea; }
+    .brand svg{ width:28px; height:28px; filter: drop-shadow(0 0 12px rgba(20,241,149,.25)); }
+    .brand strong{ font-weight:800; letter-spacing:.6px; }
+    nav{ display:flex; gap:8px; }
+    nav .btn{ padding:10px 14px; }
+
+    /* Auth (landing) */
+    #screen-auth{ min-height:100vh; display:grid; place-items:center; padding:40px 16px; }
+    .auth-card{
+      width: min(540px, 100%);
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid rgba(255,255,255,.07); border-radius: var(--radius);
+      box-shadow: var(--shadow); position:relative; overflow:hidden;
+    }
+    .auth-card::before{
+      content:""; position:absolute; inset:-1px; z-index:-1; border-radius: inherit;
+      background: conic-gradient(from 120deg, rgba(167,173,180,.2), rgba(20,241,149,.12), rgba(167,173,180,.2));
+      filter: blur(26px); opacity:.15;
+    }
+    .auth-body{ padding:28px; }
+    .auth-title{ display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+    .auth-title svg{ width:36px; height:36px; }
+    .subtitle{ color: var(--steel-2); margin-bottom:22px; }
+    .field{ display:flex; flex-direction:column; gap:8px; margin: 12px 0; }
+    .field label{ font-size:.9rem; color: var(--muted); }
+    .input{
+      background: linear-gradient(180deg, #0f1012, #0c0d0f);
+      border:1px solid rgba(255,255,255,.08); border-radius: 12px; color:#e6e8ea; 
+      padding: 14px 14px; outline:none; font-size:.98rem; letter-spacing:.3px;
+      transition: border-color .2s ease, box-shadow .2s ease;
+    }
+    .input:focus{ border-color: rgba(20,241,149,.4); box-shadow: 0 0 0 6px rgba(20,241,149,.07); }
+    .auth-actions{ display:flex; gap:10px; align-items:center; justify-content:space-between; margin-top:14px; }
+    .link{ color:var(--steel-2); text-decoration:none; border-bottom:1px dashed rgba(255,255,255,.18); }
+    .link:hover{ color:#fff; border-bottom-color: rgba(255,255,255,.4); }
+
+    /* Dashboard */
+    #screen-app{ display:none; min-height:100vh; }
+    .hero{
+      padding: 48px 0 8px; border-bottom:1px solid rgba(255,255,255,.06);
+      background: linear-gradient(180deg, rgba(20,241,149,.05), rgba(255,255,255,0) 40%);
+    }
+    .hero h1{ margin:0; font-size: clamp(24px, 2.6vw, 36px); letter-spacing:.6px; }
+    .hero p{ margin:8px 0 0; color:var(--steel-2); }
+
+    /* Filters */
+    .filters{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:16px; }
+    .chip{ border:1px solid rgba(255,255,255,.1); padding:8px 12px; border-radius:999px; cursor:pointer; color:#d9dee3; background:#0d0f11; }
+    .chip.active{ border-color: rgba(20,241,149,.35); color:var(--accent); }
+
+    /* Grid */
+    .grid{ display:grid; grid-template-columns: repeat( auto-fill, minmax(260px, 1fr) ); gap: 16px; padding: 20px 0 56px; }
+    .card{
+      border:1px solid rgba(255,255,255,.08); border-radius: var(--radius); overflow:hidden; background: linear-gradient(180deg, #0f1113, #0b0d0f);
+      box-shadow: var(--shadow); position:relative; transition: transform .15s ease, border-color .2s ease; min-height: 260px;
+    }
+    .card:hover{ transform: translateY(-2px); border-color: rgba(255,255,255,.16); }
+    .thumb{ height:150px; background:
+        radial-gradient(160px 80px at 80% 20%, rgba(20,241,149,.15), transparent 40%),
+        radial-gradient(220px 140px at 10% 120%, rgba(255,255,255,.08), transparent 45%),
+        linear-gradient(135deg, #1a1d21, #0b0e10);
+      display:flex; align-items:center; justify-content:center; }
+    .thumb .lock{ width:24px; height:24px; opacity:.7; }
+    .card-body{ padding:14px 14px 16px; }
+    .title{ display:flex; justify-content:space-between; align-items:center; gap:6px; }
+    .title h3{ margin:0; font-size:1rem; }
+    .meta{ display:flex; gap:8px; align-items:center; margin-top:8px; color: var(--steel-2); font-size:.9rem; }
+    .actions{ margin-top:14px; display:flex; gap:8px; align-items:center; }
+
+    .footer{ border-top:1px solid rgba(255,255,255,.06); padding:18px 0; color: var(--steel-2); text-align:center; }
+
+    /* Modal */
+    .modal{ position:fixed; inset:0; background: rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; padding:16px; z-index:100; }
+    .modal.open{ display:flex; }
+    .modal-card{ width:min(520px, 100%); background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.08); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .modal-head{ display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid rgba(255,255,255,.06); }
+    .modal-body{ padding:20px; color: var(--steel-2); }
+    .modal-actions{ padding:16px 20px; border-top:1px solid rgba(255,255,255,.06); display:flex; gap:10px; justify-content:flex-end; }
+
+    /* Hidden marker for state */
+    .hidden{ display:none !important; }
+
+    /* Small screen tweaks */
+    @media (max-width:600px){
+      nav{ display:none; }
+      .auth-actions{ flex-direction:column; align-items:stretch; gap:12px; }
+    }
   </style>
 </head>
 <body>
-  <!-- BODY CONTENT -->
+  <!-- AUTH / LANDING -->
+  <section id="screen-auth" aria-label="Ivy Black Log in">
+    <div class="auth-card">
+      <div class="auth-body">
+        <div class="auth-title">
+          <!-- Ivy Black monogram -->
+          <svg viewBox="0 0 64 64" aria-hidden="true" role="img">
+            <defs>
+              <linearGradient id="steel" x1="0" x2="1">
+                <stop offset="0%" stop-color="#b8bec6"/>
+                <stop offset="50%" stop-color="#7f868d"/>
+                <stop offset="100%" stop-color="#cdd3da"/>
+              </linearGradient>
+            </defs>
+            <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#steel)" opacity="0.3"/>
+            <path d="M18 46V18h10.5c7.5 0 12.5 3.8 12.5 9.5c0 6.1-5.3 9.8-12.8 9.8H24v8.7h-6zm6-14.2h4.1c4.2 0 6.8-1.8 6.8-4.8c0-2.9-2.6-4.7-6.7-4.7H24v9.5z" fill="#e6e8ea"/>
+            <circle cx="46" cy="18" r="3" fill="#14f195"/>
+          </svg>
+          <div>
+            <h2 style="margin:0">Ivy Black</h2>
+            <div class="subtitle">Subscription-only access to luxury <span class="badge">GWP</span> drops.</div>
+          </div>
+        </div>
+
+        <form id="loginForm" onsubmit="return false" aria-describedby="authHint">
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" class="input" name="email" type="email" required placeholder="member@ivyblack.io" autocomplete="username" />
+          </div>
+          <div class="field">
+            <label for="password">Password</label>
+            <input id="password" class="input" name="password" type="password" required placeholder="••••••••" autocomplete="current-password" />
+          </div>
+          <div class="auth-actions">
+            <button class="btn primary" id="loginBtn" aria-label="Log in">Sign in</button>
+            <div class="muted" id="authHint">No public access. <span class="badge">Invite Only</span> — join via subscription.</div>
+          </div>
+        </form>
+        <hr class="divider"/>
+        <div class="muted" style="display:flex; gap:10px; align-items:center;">
+          <span class="badge">Stealth Mode</span> Operates on member referrals. Stock rotates hourly.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- APP / LISTINGS -->
+  <section id="screen-app" aria-label="Ivy Black Listings">
+    <header class="topbar">
+      <div class="inner container">
+        <a href="#" class="brand" onclick="goHome(event)">
+          <svg viewBox="0 0 64 64" aria-hidden="true" class="logo">
+            <rect x="6" y="6" width="52" height="52" rx="12" fill="url(#steel)" opacity="0.35"/>
+            <path d="M18 46V18h10.5c7.5 0 12.5 3.8 12.5 9.5c0 6.1-5.3 9.8-12.8 9.8H24v8.7h-6z" fill="#e6e8ea"/>
+            <circle cx="46" cy="18" r="3" fill="#14f195"/>
+          </svg>
+          <strong>IVY BLACK</strong>
+          <span class="badge" title="Gifts With Purchase">GWP</span>
+        </a>
+        <nav>
+          <button class="btn" onclick="openModal('tiers')">Subscription</button>
+          <button class="btn" onclick="openModal('account')">Account</button>
+          <button class="btn" onclick="signOut()">Sign out</button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="hero">
+      <div class="container">
+        <h1>Exclusive GWP Exchange <span class="badge">Members Only</span></h1>
+        <p>Curated luxury brand gifts with purchase — verified provenance, member-locked pricing, limited windows.</p>
+
+        <div class="filters">
+          <span class="muted">Filter:</span>
+          <button class="chip active" data-filter="all" onclick="filterGrid('all', this)">All</button>
+          <button class="chip" data-filter="beauty" onclick="filterGrid('beauty', this)">Beauty</button>
+          <button class="chip" data-filter="fashion" onclick="filterGrid('fashion', this)">Fashion</button>
+          <button class="chip" data-filter="fragrance" onclick="filterGrid('fragrance', this)">Fragrance</button>
+          <button class="chip" data-filter="accessories" onclick="filterGrid('accessories', this)">Accessories</button>
+        </div>
+      </div>
+    </div>
+
+    <main class="container">
+      <div class="grid" id="grid"></div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        © <span id="year"></span> Ivy Black · Stealth operation · Terms available to members.
+      </div>
+    </footer>
+  </section>
+
+  <!-- MODALS -->
+  <div class="modal" id="modal-tiers" role="dialog" aria-modal="true" aria-labelledby="modalTitleTiers">
+    <div class="modal-card">
+      <div class="modal-head">
+        <strong id="modalTitleTiers">Subscription Tiers</strong>
+        <button class="btn" onclick="closeModal('tiers')">Close</button>
+      </div>
+      <div class="modal-body">
+        <p>Choose a membership to unlock listings and checkout. Billing handled securely; this demo shows UI only.</p>
+        <ul>
+          <li><span class="badge">Scout</span> — $19/mo · limited drops · 1 device</li>
+          <li><span class="badge">Broker</span> — $49/mo · full drops · 3 devices · watchlist alerts</li>
+          <li><span class="badge">Syndicate</span> — $99/mo · early access · API export · concierge sourcing</li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="closeModal('tiers')">Maybe later</button>
+        <button class="btn primary" onclick="toast('Subscribed — demo state set')">Subscribe</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modal-account" role="dialog" aria-modal="true" aria-labelledby="modalTitleAccount">
+    <div class="modal-card">
+      <div class="modal-head">
+        <strong id="modalTitleAccount">Account</strong>
+        <button class="btn" onclick="closeModal('account')">Close</button>
+      </div>
+      <div class="modal-body">
+        <p>Email: <span id="accEmail" class="badge">member@ivyblack.io</span></p>
+        <p>Status: <span class="badge" id="accTier">Broker</span></p>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" onclick="signOut()">Sign out</button>
+        <button class="btn primary" onclick="closeModal('account')">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed; left:50%; transform:translateX(-50%); bottom:24px; padding:12px 16px; background:linear-gradient(180deg,#1b1f23,#0f1215); border:1px solid rgba(255,255,255,.12); border-radius:12px; box-shadow:var(--shadow); display:none; z-index:200;">Done</div>
+
+  <script>
+    const byId = id => document.getElementById(id);
+    const screenAuth = byId('screen-auth');
+    const screenApp  = byId('screen-app');
+    const grid = byId('grid');
+    const year = byId('year');
+    const accEmail = byId('accEmail');
+
+    // Demo inventory (placeholder data)
+    const ITEMS = [
+      { id:1, brand:'Chanel',        name:'Mini Vanity Case Charm',           cat:'fashion',    access:'Syndicate',  window:'2h',  locked:true },
+      { id:2, brand:'Louis Vuitton', name:'Monogram Key Pouch (GWP)',          cat:'accessories',access:'Broker',     window:'6h',  locked:true },
+      { id:3, brand:'Dior',          name:'Travel Miniatures Set',            cat:'beauty',     access:'Scout',      window:'12h', locked:false },
+      { id:4, brand:'Gucci',         name:'Canvas Coin Case',                 cat:'fashion',    access:'Broker',     window:'4h',  locked:true },
+      { id:5, brand:'Fendi',         name:'Roma Card Sleeve',                 cat:'accessories',access:'Broker',     window:'8h',  locked:true },
+      { id:6, brand:'Dolce & Gabbana', name:'Velvet Pouch + Samples',        cat:'beauty',     access:'Scout',      window:'24h', locked:false },
+      { id:7, brand:'YSL Beauty',    name:'Black Opium Mini + Bag',           cat:'fragrance',  access:'Broker',     window:'10h', locked:true },
+      { id:8, brand:'Hermès',        name:'Twilly Sample Trio',               cat:'fragrance',  access:'Syndicate',  window:'1h',  locked:true },
+      { id:9, brand:'Prada',         name:'Saffiano Card Holder (GWP)',       cat:'accessories',access:'Syndicate',  window:'3h',  locked:true },
+      { id:10,brand:'Givenchy',      name:'Le Rouge Mini Duo',                cat:'beauty',     access:'Scout',      window:'18h', locked:false },
+    ];
+
+    function svgLock(){
+      return `<svg class="lock" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7 10V8a5 5 0 1 1 10 0v2" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--steel-2')}" stroke-width="1.4"/><rect x="4.8" y="10" width="14.4" height="10" rx="2.6" stroke="${getComputedStyle(document.documentElement).getPropertyValue('--accent')}" stroke-width="1.2"/></svg>`
+    }
+
+    function card(item){
+      return `
+        <article class="card" data-cat="${item.cat}">
+          <div class="thumb">${svgLock()}</div>
+          <div class="card-body">
+            <div class="title">
+              <h3>${item.brand}</h3>
+              <span class="badge">${item.access}</span>
+            </div>
+            <div class="meta">${item.name}</div>
+            <div class="meta">Access window: <span class="badge">${item.window}</span></div>
+            <div class="actions">
+              <button class="btn primary" onclick="openModal('tiers')">Unlock Listing</button>
+              <button class="btn" onclick="toast('Added to watchlist')">Watch</button>
+            </div>
+          </div>
+        </article>`
+    }
+
+    function render(items=ITEMS){ grid.innerHTML = items.map(card).join(''); }
+
+    function filterGrid(cat, el){
+      document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+      el.classList.add('active');
+      if(cat==='all') return render(ITEMS);
+      render(ITEMS.filter(i=>i.cat===cat));
+    }
+
+    function signIn(){
+      // Demo sign-in: simply switch screens and set faux account email
+      const emailVal = byId('email').value || 'member@ivyblack.io';
+      accEmail.textContent = emailVal;
+      screenAuth.style.display='none';
+      screenApp.style.display='block';
+      render();
+    }
+    function signOut(){ screenApp.style.display='none'; screenAuth.style.display='grid'; }
+    function goHome(e){ e?.preventDefault(); window.scrollTo({top:0, behavior:'smooth'}); }
+
+    function openModal(key){ byId(`modal-${key}`).classList.add('open'); }
+    function closeModal(key){ byId(`modal-${key}`).classList.remove('open'); }
+
+    function toast(msg){ const t = byId('toast'); t.textContent = msg; t.style.display='block'; clearTimeout(window.__t);
+      window.__t = setTimeout(()=> t.style.display='none', 1800);
+    }
+
+    // Wire up
+    year.textContent = new Date().getFullYear();
+    byId('loginBtn').addEventListener('click', signIn);
+
+    // Support Enter key within form
+    byId('loginForm').addEventListener('submit', signIn);
+  </script>
 </body>
 </html>
